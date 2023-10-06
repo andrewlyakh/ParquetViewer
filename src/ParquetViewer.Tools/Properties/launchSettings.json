@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ParquetViewer.Tools": {
+      "commandName": "Project",
+      "commandLineArgs": "D:\\_HCSC\\hash_0.parquet D:\\_HCSC\\out.sql"
+    }
+  }
+}

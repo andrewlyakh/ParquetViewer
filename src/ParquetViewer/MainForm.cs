@@ -36,6 +36,7 @@ namespace ParquetViewer
                 this.SelectedFields = null;
                 this.changeFieldsMenuStripButton.Enabled = false;
                 this.getSQLCreateTableScriptToolStripMenuItem.Enabled = false;
+                this.getCreateSQLForVerticaToolStripMenuItem.Enabled = false;
                 this.saveAsToolStripMenuItem.Enabled = false;
                 this.metadataViewerToolStripMenuItem.Enabled = false;
                 this.recordCountStatusBarLabel.Text = "0";
@@ -55,6 +56,7 @@ namespace ParquetViewer
                     this.changeFieldsMenuStripButton.Enabled = true;
                     this.saveAsToolStripMenuItem.Enabled = true;
                     this.getSQLCreateTableScriptToolStripMenuItem.Enabled = true;
+                    this.getCreateSQLForVerticaToolStripMenuItem.Enabled = true;
                     this.metadataViewerToolStripMenuItem.Enabled = true;
                 }
             }

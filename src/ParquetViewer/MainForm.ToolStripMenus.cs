@@ -1,10 +1,10 @@
 ﻿using ParquetViewer.Analytics;
+using ParquetViewer.Engine;
 using ParquetViewer.Helpers;
 using System;
 using System.Data;
 using System.Diagnostics;
 using System.IO;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ParquetViewer
@@ -69,32 +69,38 @@ namespace ParquetViewer
 
         private void GetSQLCreateTableScriptToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var openFileOrFolderPath = this.OpenFileOrFolderPath;
-            if (openFileOrFolderPath?.EndsWith("/") == true)
+            var sql = GetScript(ScriptType.Generic);
+            if (string.IsNullOrEmpty(sql))
             {
-                //trim trailing slash '/'
-                openFileOrFolderPath = openFileOrFolderPath[..^1];
+                return;
             }
 
-            string tableName = Path.GetFileNameWithoutExtension(openFileOrFolderPath) ?? DEFAULT_TABLE_NAME;
-            if (this.mainDataSource?.Columns.Count > 0)
+            Clipboard.SetText(sql);
+            MenuBarClickEvent.FireAndForget(MenuBarClickEvent.ActionId.SQLCreateTable);
+            MessageBox.Show(this, "Create table script copied to clipboard!", "Parquet Viewer", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void getCreateSQLForVerticaToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (!IsAnyFileOpen)
             {
-                var dataset = new DataSet();
-
-                this.mainDataSource.TableName = tableName;
-                dataset.Tables.Add(this.mainDataSource);
-
-                var scriptAdapter = new CustomScriptBasedSchemaAdapter();
-                string sql = scriptAdapter.GetSchemaScript(dataset, false);
-
-                dataset.Tables.Remove(this.mainDataSource); //If we don't remove it, we can get errors in rare cases
-
-                Clipboard.SetText(sql);
-                MenuBarClickEvent.FireAndForget(MenuBarClickEvent.ActionId.SQLCreateTable);
-                MessageBox.Show(this, "Create table script copied to clipboard!", "Parquet Viewer", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
             }
-            else
-                MessageBox.Show(this, "Please select some fields first to get the SQL script", "Parquet Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+            var sql = GetScript(ScriptType.Vertica);
+
+            if (string.IsNullOrEmpty(sql))
+            {
+                return;
+            }
+
+            var viewer = new SqlViewerForm();
+            viewer.SetText(sql);
+            viewer.ShowDialog();
+
+            /* Clipboard.SetText(sql);
+            MenuBarClickEvent.FireAndForget(MenuBarClickEvent.ActionId.SQLCreateTable);
+            MessageBox.Show(this, "Create table script copied to clipboard!", "Parquet Viewer", MessageBoxButtons.OK, MessageBoxIcon.Information); */
         }
 
         private void MetadataViewerToolStripMenuItem_Click(object sender, EventArgs e)
@@ -164,6 +170,39 @@ namespace ParquetViewer
             this.shareAnonymousUsageDataToolStripMenuItem.Checked = !this.shareAnonymousUsageDataToolStripMenuItem.Checked;
             AppSettings.AnalyticsDataGatheringConsent = this.shareAnonymousUsageDataToolStripMenuItem.Checked;
             AppSettings.ConsentLastAskedOnVersion = AboutBox.AssemblyVersion;
+        }
+
+        private string GetScript(ScriptType scriptType)
+        {
+            var openFileOrFolderPath = this.OpenFileOrFolderPath;
+            if (openFileOrFolderPath?.EndsWith("/") == true)
+            {
+                //trim trailing slash '/'
+                openFileOrFolderPath = openFileOrFolderPath[..^1];
+            }
+
+            string tableName = Path.GetFileNameWithoutExtension(openFileOrFolderPath) ?? DEFAULT_TABLE_NAME;
+
+            if (this.mainDataSource?.Columns.Count > 0)
+            {
+                var dataset = new DataSet();
+
+                this.mainDataSource.TableName = tableName;
+                dataset.Tables.Add(this.mainDataSource);
+
+                var scriptAdapter = new CustomScriptBasedSchemaAdapter();
+                string sql = scriptAdapter.GetSchemaScript(dataset, false, scriptType);
+
+                dataset.Tables.Remove(this.mainDataSource); //If we don't remove it, we can get errors in rare cases
+
+                return sql;
+            }
+            else
+            {
+                MessageBox.Show(this, "Please select some fields first to get the SQL script", "Parquet Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            return string.Empty;
         }
     }
 }
